@@ -358,8 +358,25 @@ static void* iprogs_mmap_file_into_memory(const char* file_name, size_t size)
 
 static void* iprogs_mmap_file_into_memory(const char* file_name, size_t size)
 {
-    fprintf(stderr, "NYI iprogs_mmap_file_into_memory");
-    exit(1);
+	int fd = open(file_name, O_RDWR, 0);
+	if (fd < 0) {
+		fprintf(stderr, "iprogs_mmap_file_into_memory: cannot open %s: %s", file_name, strerror(errno));
+		exit(1);
+	}
+
+	int flags;
+#ifdef NAND_ALLOW_RW_ACCESS
+	flags = MAP_SHARED;
+#else
+	flags = MAP_PRIVATE;
+#endif
+	void* res = mmap(NULL, size, PROT_READ | PROT_WRITE, flags, fd, 0);
+	if (res == MAP_FAILED) {
+		fprintf(stderr, "iprogs_mmap_file_into_memory: failed to map file %s into memory: %s", file_name, strerror(errno));
+		exit(1);
+	}
+
+	return res;
 }
 
 #endif // _WIN32
